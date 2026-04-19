@@ -5,7 +5,13 @@ const mongoose = require('mongoose');
 
 const app = express();
 
-app.use(cors());
+app.use(cors({
+  origin: [
+    "http://localhost:5173",
+    "https://expence-frontend-dabv456dp-vikendras-projects.vercel.app"
+  ],
+  credentials: true
+}));
 app.use(express.json());
 
 app.use('/api/auth', require('./routes/auth'));
