@@ -45,13 +45,14 @@ require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
 const mongoose = require('mongoose');
-const dns = require("dns");
-
-dns.setServers(["8.8.8.8", "1.1.1.1"]); // DNS fix
+const dns = require('dns');
 
 const app = express();
 
-// ✅ Better CORS handling
+/* ---------------- DNS FIX (important for MongoDB Atlas) ---------------- */
+dns.setServers(["8.8.8.8", "1.1.1.1"]);
+
+/* ---------------- CORS CONFIG ---------------- */
 const allowedOrigins = [
   "http://localhost:5173",
   "https://expence-frontend-bb88h4a4j-vikendras-projects.vercel.app"
@@ -59,45 +60,46 @@ const allowedOrigins = [
 
 app.use(cors({
   origin: function (origin, callback) {
+    // allow requests with no origin (like Postman)
     if (!origin || allowedOrigins.includes(origin)) {
       callback(null, true);
     } else {
-      console.log("Blocked by CORS:", origin);
+      console.log("❌ Blocked by CORS:", origin);
       callback(new Error("Not allowed by CORS"));
     }
   },
   credentials: true
 }));
 
+/* ---------------- MIDDLEWARE ---------------- */
 app.use(express.json());
 
-// ✅ Health check (VERY IMPORTANT for testing)
-app.get("/", (req, res) => {
-  res.send("Backend is running 🚀");
+/* ---------------- HEALTH CHECK ---------------- */
+app.get('/', (req, res) => {
+  res.send('Backend is running 🚀');
 });
 
-app.get("/health", (req, res) => {
-  res.json({ status: "ok" });
+app.get('/health', (req, res) => {
+  res.json({ status: 'ok' });
 });
 
-// Routes
+/* ---------------- ROUTES ---------------- */
 app.use('/api/auth', require('./routes/auth'));
 app.use('/api/expenses', require('./routes/expenses'));
 
-// ✅ Connect DB and start server
+/* ---------------- DB CONNECTION + SERVER START ---------------- */
+const PORT = process.env.PORT || 8080; // Railway compatible
+
 mongoose
-  .connect(process.env.MONGO_URI, { family: 4 })
+  .connect(process.env.MONGO_URI)
   .then(() => {
-    console.log('MongoDB connected');
+    console.log('✅ MongoDB connected');
 
-    const PORT = process.env.PORT || 5000;
-
-    // 🔥 MOST IMPORTANT FIX
     app.listen(PORT, "0.0.0.0", () => {
-      console.log(`Server running on port ${PORT}`);
+      console.log(`🚀 Server running on port ${PORT}`);
     });
   })
   .catch((err) => {
-    console.error('MongoDB connection error:', err.message);
+    console.error('❌ MongoDB connection error:', err.message);
     process.exit(1);
   });
